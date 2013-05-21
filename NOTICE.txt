@@ -1,0 +1,2 @@
+Solr-Fabric
+Copyright 2013 LucidWorks, Inc.
