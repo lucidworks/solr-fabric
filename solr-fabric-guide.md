@@ -1,4 +1,3 @@
-
 Installing Distributed Solr 4 with Fabric
 =========================================
 
@@ -49,7 +48,7 @@ First, if you've not already got Fabric installed, follow [these
 Fabric installation instructions](./fabric-install.md).
 
 To make things easier, I've prepared [a small
-repository](https://github.com/makuk66/solr-fabric) with example
+repository](https://github.com/LucidWorks/solr-fabric) with example
 config and scripts. Download that first:
 
     git clone https://github.com/LucidWorks/solr-fabric
