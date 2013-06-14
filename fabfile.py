@@ -299,7 +299,7 @@ def solr_clusterstate():
 @roles('solr')
 def upstart_solr():
     """ Write an Upstart script for Solr. """
-    context = { "user": env.user, "group": env.user, "path": os.path.join(env.solr_dir, "example"),
+    context = { "host": env.host, "user": env.user, "group": env.user, "path": os.path.join(env.solr_dir, "example"),
     "num_shards": env.num_shards, "zookeeper_hostports": zookeeper_hostports() }
     upload_template(filename='solr-upstart.conf', destination='/etc/init/{0}.conf'.format(env.solr_service),
         template_dir=TEMPLATES, context=context, use_sudo=True, use_jinja=True)
