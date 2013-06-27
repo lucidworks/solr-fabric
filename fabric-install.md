@@ -1,4 +1,3 @@
-
 Installing Fabric and its dependencies
 ======================================
 
@@ -51,7 +50,7 @@ Whenever you want to run fabric, just re-activate your virtualenv with that sour
 
 And, finally, we're ready to actually install Fabric:
 
-    pip install fabric
+    pip install fabric jinja2
 
 To verify you can run it, invoke it to print out its versions:
 
