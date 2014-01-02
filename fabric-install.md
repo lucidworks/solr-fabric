@@ -27,15 +27,13 @@ You need a system compiler. If you have a developer.apple.com account you can do
 install the command-line tools separately; if not, download Xcode from the App Store, and install the
 "Command Line Tools" component in the Downloads pane in Preferences.
 
-If you use [homebrew](http://brew.sh)
-(recommended), install a fresh python and virtualenv with:
+You need a recent Python, pip, and virtual_env.
+I strongly recommend [homebrew](http://brew.sh),
+so you can install a fresh python and virtualenv with:
 
     brew install python
     pip install virtualenv
 
-If not, just do:
-
-    sudo easy_install virtualenv
 
 ### Installing Fabric
 
