@@ -32,8 +32,7 @@ I strongly recommend [homebrew](http://brew.sh),
 so you can install a fresh python and virtualenv with:
 
     brew install python
-    pip install virtualenv
-
+    sudo pip install virtualenv
 
 ### Installing Fabric
 
