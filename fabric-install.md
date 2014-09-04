@@ -1,7 +1,7 @@
 Installing Fabric and its dependencies
 ======================================
 
-Fabric itself takes a little effort to setup, but it's worth it.
+[Fabric](http://www.fabfile.org/) itself takes a little effort to setup, but it's worth it.
 
 The Fabric community is quite active, and we will use the latest version.
 
