@@ -2,7 +2,7 @@ Installing Distributed Solr 4 with Fabric
 =========================================
 
 _The latest version of this document is on
-[github.com/LucidWorks/solr-fabric](https://github.com/LucidWorks/solr-fabric/)_
+[github.com/LucidWorks/solr-fabric](https://github.com/lucidworks/solr-fabric/)_
 
 Solr 4 has a subset of features that allow it be run as a distributed
 fault-tolerant cluster, referred to as "SolrCloud". Installing and
@@ -51,7 +51,7 @@ To make things easier, I've prepared [a small
 repository](https://github.com/LucidWorks/solr-fabric) with example
 config and scripts. Download that first:
 
-    git clone https://github.com/LucidWorks/solr-fabric
+    git clone https://github.com/lucidworks/solr-fabric
     cd solr-fabric
 
 The main script here is the [fabfile.py](./fabfile.py). Open this with
