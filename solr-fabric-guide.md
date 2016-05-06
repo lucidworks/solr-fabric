@@ -171,7 +171,7 @@ You can inspect the Solr Admin user interface on e.g.
 (adjust for your hostname)
 
 
-Runing Multicore Mode
+Running Multicore Mode
 ---------------------
 
 Setup solr using `fab install_solr` and then
