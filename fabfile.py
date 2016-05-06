@@ -35,7 +35,7 @@ env.roledefs.update({
 
 # URLs to download ZooKeeper and Solr from
 env.zookeeper_url = 'http://www.mirrorservice.org/sites/ftp.apache.org/zookeeper/zookeeper-3.4.5/zookeeper-3.4.5.tar.gz'
-env.solr_url = 'http://www.mirrorservice.org/sites/ftp.apache.org/lucene/solr/4.3.0/solr-4.3.0.tgz'
+env.solr_url = 'http://archive.apache.org/dist/lucene/solr/4.4.0/solr-4.4.0.tgz'
 
 ### You don't need to change anything below here
 
@@ -61,6 +61,8 @@ env.solr_dir = os.path.join(env.my_dir_path, re.sub(r'\.tgz$', '', env.solr_tgz)
 # names for upstart services. Use a prefix to prevent accidentally overwriting a system package
 env.zookeeper_service  = 'my_zookeeper'
 env.solr_service = 'my_solr'
+env.solr_home = 'solr' #If you plan to use multicore. Run: fab stop_solr, fab bootstrap_multicore_solrcloud and fab start_solr
+env.solr_port = 8983 #Note if you modfiy this, please update example/etc/jetty.xml
 
 # create an 'all' role containing all hosts
 env.roledefs.update({ 'all': merge([], ['zookeeper', 'solr'], [], env.roledefs) })
@@ -231,20 +233,31 @@ def bootstrap_solrcloud():
     zkhost = "{0}:2181".format(env.first_zookeeper)
     collection = "collection1"
     conf_set = "configuration1"
-    solr_home = "solr"
     with cd(os.path.join(env.solr_dir, "example")):
         # jetty has not run yet, so the webapp has not been extracted; do it here ourselves
         run("mkdir solr-webapp-tmp; (cd solr-webapp-tmp; jar xvf ../webapps/solr.war)")
         zk_cli = "java -classpath solr-webapp-tmp/WEB-INF/lib/*:./lib/ext/* org.apache.solr.cloud.ZkCLI"
         run("{0} -cmd upconfig -zkhost {1} -d solr/{2}/conf/ -n {3}".format(zk_cli, zkhost, collection, conf_set))
-        run("{0} -cmd linkconfig -zkhost {1} -collection {2} -confname {3} -solrhome {4}".format(zk_cli, zkhost, collection, conf_set, solr_home))
-        run("{0} -cmd bootstrap -zkhost {1} -solrhome {2}".format(zk_cli, zkhost, solr_home))
+        run("{0} -cmd linkconfig -zkhost {1} -collection {2} -confname {3} -solrhome {4}".format(zk_cli, zkhost, collection, conf_set, env.solr_home))
+        run("{0} -cmd bootstrap -zkhost {1} -solrhome {2}".format(zk_cli, zkhost, env.solr_home))
         run("{0} -cmd upconfig -zkhost {1} -d solr/{2}/conf/ -n {3}".format(zk_cli, zkhost, collection, conf_set))
+        run("rm -fr solr-webapp-tmp")
+
+@hosts(env.first_solr)
+def bootstrap_multicore_solrcloud():
+    """ Bootstrap multicore SolrCloud. """
+    # See http://docs.lucidworks.com/display/solr/Command+Line+Utilities
+    zkhost = "{0}:2181".format(env.first_zookeeper)
+    with cd(os.path.join(env.solr_dir, "example")):
+        # jetty has not run yet, so the webapp has not been extracted; do it here ourselves
+        run("mkdir solr-webapp-tmp; (cd solr-webapp-tmp; jar xvf ../webapps/solr.war)")
+        zk_cli = "java -classpath solr-webapp-tmp/WEB-INF/lib/*:./lib/ext/* org.apache.solr.cloud.ZkCLI"
+        run("{0} -cmd bootstrap -zkhost {1} -solrhome {2}".format(zk_cli, zkhost, env.solr_home))
         run("rm -fr solr-webapp-tmp")
 
 def solrcloud_url():
     """ Print a URL for the Solr Admin interface. """
-    puts("http://{0}:8983/solr/#/~cloud".format(env.first_solr))
+    puts("http://{0}:{1}/solr/#/~cloud".format(env.first_solr, env.solr_port))
 
 def wait_for_port(port, max_wait=60, interval=5):
     """ Wait for a TCP port to be listened to. """
@@ -270,7 +283,7 @@ def wait_for_solr_ports():
     status = sudo("service {0} status".format(env.solr_service))
     if "running" not in status:
         abort("solr not running")
-    execute('wait_for_port', 8983)
+    execute('wait_for_port', env.solr_port)
 
 def wait_for_solr_in_zookeeper():
     """ Wait for Solr data to appear in ZooKeeper. """
@@ -300,7 +313,7 @@ def solr_clusterstate():
 def upstart_solr():
     """ Write an Upstart script for Solr. """
     context = { "host": env.host, "user": env.user, "group": env.user, "path": os.path.join(env.solr_dir, "example"),
-    "num_shards": env.num_shards, "zookeeper_hostports": zookeeper_hostports() }
+    "num_shards": env.num_shards, "zookeeper_hostports": zookeeper_hostports(), 'solr_home': env.solr_home}
     upload_template(filename='solr-upstart.conf', destination='/etc/init/{0}.conf'.format(env.solr_service),
         template_dir=TEMPLATES, context=context, use_sudo=True, use_jinja=True)
 
@@ -334,7 +347,7 @@ def solr_upstart_log():
 def solr_status():
     """ Report the service status for Solr, and print the Solr cores status. """
     sudo("service {0} status".format(env.solr_service))
-    run("wget -O - http://localhost:8983/solr/admin/cores?action=STATUS")
+    run("wget -O - http://localhost:{0}/solr/admin/cores?action=STATUS".format(env.solr_port))
 
 
 ### Below here are top-level tasks
@@ -388,27 +401,27 @@ def install_solr_and_zookeeper():
 def sample_data():
     """ Load the "books" sample data. """
     with cd(os.path.join(env.solr_dir, "example/exampledocs")):
-        run("curl -sS 'http://{0}:8983/solr/update/json?commit=true' --data-binary @books.json -H 'Content-type:application/json'".format(env.first_solr))
+        run("curl -sS 'http://{0}:{1}/solr/update/json?commit=true' --data-binary @books.json -H 'Content-type:application/json'".format(env.first_solr, env.solr_port))
 
 @hosts(env.first_solr)
 def sample_query():
     """ Do a query. """
-    local("curl  -sS 'http://{0}:8983/solr/select?q=name:monsters&wt=json&indent=true'".format(env.first_solr))
+    local("curl  -sS 'http://{0}:{1}/solr/select?q=name:monsters&wt=json&indent=true'".format(env.first_solr, env.solr_port))
 
 @hosts(env.first_solr)
 def sample_query_all():
     """ Do a query for all documents. """
-    local("curl  -sS 'http://{0}:8983/solr/select?q=*:*&wt=json&indent=true'".format(env.first_solr))
+    local("curl  -sS 'http://{0}:{1}/solr/select?q=*:*&wt=json&indent=true'".format(env.first_solr, env.solr_port))
 
 @roles('solr')
 def sample_query_all_distrib_false():
     """ Do a query for all documents, against each node, with distrib=false. """
-    run("curl  -sS 'http://localhost:8983/solr/select?q=*:*&wt=json&indent=true&distrib=false'")
+    run("curl  -sS 'http://localhost:{0}/solr/select?q=*:*&wt=json&indent=true&distrib=false'".format(env.solr_port))
 
 @roles('solr')
 def display_status():
     """ Show Solr core status. """
-    run("""curl  -sS "http://localhost:8983/solr/admin/cores?action=STATUS&indent=true&wt=json" """)
+    run("""curl  -sS "http://localhost:{0}/solr/admin/cores?action=STATUS&indent=true&wt=json" """.format(env.solr_port))
 
 @roles('zookeeper')
 def uninstall_zookeeper_upstart():

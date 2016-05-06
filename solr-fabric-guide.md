@@ -171,6 +171,17 @@ You can inspect the Solr Admin user interface on e.g.
 (adjust for your hostname)
 
 
+Runing Multicore Mode
+---------------------
+
+Setup solr using `fab install_solr` and then
+
+1. `fab stop_solr`
+2. Update fabfile.py with `env.solr_home='multicore'`
+3. `fab bootstrap_multicore_solrcloud`
+4. `fab start_solr`
+
+
 Loading data
 ------------
 
